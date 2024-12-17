@@ -25,7 +25,6 @@ export class PseudoText3d extends PIXI.Container {
         for (let i = 0; i < numOfSideLayer; i++) {
             const side = this._sideFaceList.push(this.sideFace.addChild(new PIXI.Text(text, sideStyle)));
         }
-        this.sideFace.alpha = 0.4;
 
         /**
          * シャドウを作成
@@ -40,12 +39,12 @@ export class PseudoText3d extends PIXI.Container {
             this._shadowList.push(shadow);
         }
         
-        // /**
-        //  * ドロップシャドウ
-        //  */
+        /**
+         * ドロップシャドウを作成
+         */
         const dropshadowStyle = Utils.cloneTextStyle(pseudoStyle, {fill: 0xFFFFFF});
         this.dropshadowText = this.addChild(new PIXI.Text(text, dropshadowStyle));
-
+        
         this.dropShadowFilter = new PIXI.filters.DropShadowFilter({
             color     : 0x333333,
             alpha     : 0.5,
@@ -55,73 +54,39 @@ export class PseudoText3d extends PIXI.Container {
             shadowOnly: true,
         });
         this.dropshadowText.filters = [this.dropShadowFilter];
+        
+        /**
+         * ドロップシャドウ（ライト）を作成
+         */
+        const lightStyle = Utils.cloneTextStyle(pseudoStyle, {fill: 0xFFFFFF});
+        this.lightText = this.addChild(new PIXI.Text(text, lightStyle));
 
-        // /**
-        //  * グロードロップシャドウ
-        //  */
-        const glowStyle = Utils.cloneTextStyle(pseudoStyle, {fill: 0xFFFFFF});
-        this.glowText = this.addChild(new PIXI.Text(text, glowStyle));
-        this.glowFilter = new PIXI.filters.DropShadowFilter({
-            color  : 0xFF0000,
-            color  : 0xFFFFFF,
-            alpha     : 0.75,
+        this.lightFilter = new PIXI.filters.DropShadowFilter({
+            color     : 0xFFFFFF,
+            alpha     : 0.5,
             blur      : 4,
             quality   : 4,
             offset    : {x:0, y:0},
-            quality   : 4,
             shadowOnly: true,
         });
-        this.glowText.filters = [this.glowFilter];
+        this.lightText.filters = [this.lightFilter];
 
-
-
-
-
-
-        /**x */
-
-
-        const maskStyle = new PIXI.TextStyle({
-            fontFamily: 'Inter',
-            fontSize  : 300,
-            fontWeight: 800,
-            fill      : 0xFF00FF,
-            align     : 'center',
-        });
-        
-        this.glowTextMask = this.addChild(new PIXI.Text(text, maskStyle));
-        // this.glowTextMask.x = 30;
-        this.glowTextMask.zIndex = 18;
-
-        this.glowText.mask = this.glowTextMask;
-        
-
-        /**x */
-        
-        
-        
         this.sideFace.zIndex = 10;
         this.frontFace.zIndex = 20;
-        this.glowText.zIndex = 21;
 
-        // this.shadows.visible = false;
-        // this.sideFace.visible = false;
-        // this.dropshadowText.visible = false;
-        // this.frontFace.visible = false;
-        // this.glowText.visible = false;
-        
         Utils.pivotCenter(this);
         this.x = dp.limitedScreen.halfWidth;
         this.y = dp.limitedScreen.halfHeight;
         // this.redraw();
     }
     
+
+
+
     redraw(cameraRadius = 8, cameraAngle = 90, shadowRadius = 80, shadowDegree = 135){
         /**
          * サイドフェイス
          */
-
-        
         const cameraRadiusPerTick = cameraRadius / this._sideFaceList.length;
         for (let i = 0; i < this._sideFaceList.length; i++) {
             
@@ -129,7 +94,6 @@ export class PseudoText3d extends PIXI.Container {
                 x: (cameraRadiusPerTick * i) * Math.cos(Utils.degreesToRadians(cameraAngle)),
                 y: (cameraRadiusPerTick * i) * Math.sin(Utils.degreesToRadians(cameraAngle)),
             };
-            
             let side = this._sideFaceList[i];
             side.scale.set(1);
             side.x = pos.x;
@@ -138,9 +102,19 @@ export class PseudoText3d extends PIXI.Container {
             side.width -= fov;
             side.x += (fov) / 2;
             if(i == this._sideFaceList.length - 1){
-                // this.shadows.y = side.y;
+                this.shadows.y = side.y;
             }
         }
+
+        let diff = Math.abs(shadowDegree - cameraAngle) % 360;
+        if (diff > 180) {
+            diff = 360 - diff;
+        }
+        let diffAlpha = 0.1 + (diff / 180 * 0.7);
+        
+        this.sideFace.alpha = diffAlpha;
+        
+        
 
         /**
          * シャドウ
@@ -152,7 +126,7 @@ export class PseudoText3d extends PIXI.Container {
                 x: (shadpwRadiusPerTick * i) * Math.cos(Utils.degreesToRadians(shadowDegree)),
                 y: (shadpwRadiusPerTick * i) * Math.sin(Utils.degreesToRadians(shadowDegree)),
             }
-            
+
             let shadow = this._shadowList[i];
             shadow.scale.set(1);
             shadow.x = pos.x;
@@ -172,15 +146,13 @@ export class PseudoText3d extends PIXI.Container {
         this.dropShadowFilter.offset = pos;
 
         /**
-         * グロードロップシャドウ
+         * ドロップシャドウ（ライト）
          */
-        const glowPos = {
-            x: (shadowRadius/5) * Math.cos(Utils.degreesToRadians(Utils.getOppositeDegrees(shadowDegree))),
-            y: (shadowRadius/5) * Math.sin(Utils.degreesToRadians(Utils.getOppositeDegrees(shadowDegree))),
+        const lightPos = {
+            x: (shadowRadius/8) * Math.cos(Utils.degreesToRadians(Utils.getOppositeDegrees(shadowDegree))),
+            y: (shadowRadius/8) * Math.sin(Utils.degreesToRadians(Utils.getOppositeDegrees(shadowDegree))),
         }
-        this.glowFilter.offset = pos;
-        this.glowText.x = glowPos.x;
-        this.glowText.y = glowPos.y;
+        this.lightFilter.offset = lightPos;
     }
 
 }

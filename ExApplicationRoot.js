@@ -28,6 +28,7 @@ export class ExApplicationRoot extends PIXI.Container {
         
         assetsPromise.then((items) => {
             dataProvider.assets = items;
+            console.log('assets loaded');
             this.init();
         });
     }
