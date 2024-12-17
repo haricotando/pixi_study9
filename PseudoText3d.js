@@ -6,19 +6,22 @@ export class PseudoText3d extends PIXI.Container {
     
     constructor(text = 'AOOA', pseudoStyle) {
         super();
-
+        
+        this.text = text;
         this.sortableChildren = true;
         
+        this.textContainer = this.addChild(new PIXI.Container());
+        this.textContainer.sortableChildren = true;
         /**
          * フロントフェイスを作成
         */
         this.frontFace = new PIXI.Text(text, pseudoStyle);
-        this.addChild(this.frontFace);
+        this.textContainer.addChild(this.frontFace);
 
         /**
         * サイドフェイスを作成
        */
-        this.sideFace = this.addChild(new PIXI.Container());
+        this.sideFace = this.textContainer.addChild(new PIXI.Container());
         const sideStyle = Utils.cloneTextStyle(pseudoStyle, {fill: 0xCBCBCB});
         const numOfSideLayer = 10;
         this._sideFaceList = [];
@@ -29,7 +32,7 @@ export class PseudoText3d extends PIXI.Container {
         /**
          * シャドウを作成
         */
-        this.shadows = this.addChild(new PIXI.Container());
+        this.shadows = this.textContainer.addChild(new PIXI.Container());
         const shadowStyle = Utils.cloneTextStyle(pseudoStyle, {fill: 0x333333});
         const numOfShadowLayer = 20;
         this._shadowList = [];
@@ -43,7 +46,7 @@ export class PseudoText3d extends PIXI.Container {
          * ドロップシャドウを作成
          */
         const dropshadowStyle = Utils.cloneTextStyle(pseudoStyle, {fill: 0xFFFFFF});
-        this.dropshadowText = this.addChild(new PIXI.Text(text, dropshadowStyle));
+        this.dropshadowText = this.textContainer.addChild(new PIXI.Text(text, dropshadowStyle));
         
         this.dropShadowFilter = new PIXI.filters.DropShadowFilter({
             color     : 0x333333,
@@ -59,7 +62,7 @@ export class PseudoText3d extends PIXI.Container {
          * ドロップシャドウ（ライト）を作成
          */
         const lightStyle = Utils.cloneTextStyle(pseudoStyle, {fill: 0xFFFFFF});
-        this.lightText = this.addChild(new PIXI.Text(text, lightStyle));
+        this.lightText = this.textContainer.addChild(new PIXI.Text(text, lightStyle));
 
         this.lightFilter = new PIXI.filters.DropShadowFilter({
             color     : 0xFFFFFF,
@@ -74,19 +77,44 @@ export class PseudoText3d extends PIXI.Container {
         this.sideFace.zIndex = 10;
         this.frontFace.zIndex = 20;
 
-        Utils.pivotCenter(this);
-        this.x = dp.limitedScreen.halfWidth;
-        this.y = dp.limitedScreen.halfHeight;
+        // Utils.pivotCenter(this);
+        // this.x = dp.limitedScreen.halfWidth;
+        // this.y = dp.limitedScreen.halfHeight;
         // this.redraw();
     }
     
 
 
+    update(text){
+        if(this.text == text){
+            // console.log('not update');
+            return false;
+        }
+        this.text = text;
+
+        this.frontFace.text = text;
+        for (let i = 0; i < this._sideFaceList.length; i++) {
+            let side = this._sideFaceList[i];
+            side.text = text;
+        }
+
+        for (let i = 0; i < this._shadowList.length; i++) {
+            let shadow = this._shadowList[i];
+            shadow.text = text;
+        }
+
+        this.dropshadowText.text = text;
+        this.lightText.text = text;
+    }
 
     redraw(cameraRadius = 8, cameraAngle = 90, shadowRadius = 80, shadowDegree = 135){
         /**
          * サイドフェイス
          */
+
+        this.textContainer.x = (window.innerWidth - this.frontFace.width) / 2;
+        this.textContainer.y = (window.innerHeight - this.frontFace.height) / 2;
+
         const cameraRadiusPerTick = cameraRadius / this._sideFaceList.length;
         for (let i = 0; i < this._sideFaceList.length; i++) {
             

@@ -64,7 +64,7 @@ function init(){
     };
 
     document.body.appendChild(app.view);
-    const appRoot = app.stage.addChild(new ApplicationRoot(true, 'LT'));
+    const appRoot = app.stage.addChild(new ApplicationRoot(false, 'LT'));
 /* ------------------------------------------------------------
     resize Event
 ------------------------------------------------------------ */
